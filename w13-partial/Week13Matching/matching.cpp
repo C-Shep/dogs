@@ -4,6 +4,7 @@
 
 #include <map>
 #include <vector>
+#include <queue>
 #include <iostream>
 
 // helper function
@@ -32,89 +33,64 @@ bool personPrefersNewDog(std::vector<std::vector<int>> personPref, int person, i
 int dogMatchedToPerson(int person, std::map<int,int> matches)
 {
 	// Assessed, 1 mark.
+	if (matches.find(person) == matches.end())
+	{
+		return true;
+	}
+	else {
+		return false;
+	}
+
 	return 0;
 }
 
 std::map<int, int> stableMarriage(std::vector<std::vector<int>> dogPref, std::vector<std::vector<int>> personPref)
 {
 	// Assessed, 3 marks.
-	
-	// Initialise all dogs and people to be free.
-	// create counts of how many proposals each dog has made.
-	std::vector<bool> dogFree;
-	std::vector<bool> personFree;
-	std::vector<int> personMatch;
-	std::vector<int> dogProps;
-//	std::map<int, int> matching;
-	//
+	typedef std::vector<int> wantList;
+	typedef std::map<int, int> pairs;
+
 	int size = dogPref.size();
 
-	for (int i=0; i<=size;i++)
+	std::queue<int> freeDogs;
+
+	for (int i = 0; i < size; i++)
 	{
-		dogFree.push_back(true);
-		personFree.push_back(true);
-		personMatch.push_back(-1);
-		dogProps.push_back(size);
-		//matching.insert(i,-1);
+		freeDogs.push(dogPref[i][0]);
 	}
 
 	int freeDogAmount = size;
 
+	pairs matched;
 
-	
-	// while a dog is free and hasn't proposed to everyone yet.
-
-	while (freeDogAmount > 0)
+	while (!freeDogs.empty())
 	{
-			// find the next free dog who still has a person to propose to
-		int currentDog;
-		for (currentDog = 0; currentDog < size; currentDog++)
+		const int& currentDawg = freeDogs.front();
+		const wantList& wantlist = dogPref[currentDawg];
+
+		for (wantList::const_iterator it = wantlist.begin(); it != wantlist.end(); ++it)
 		{
-			if (dogFree[currentDog] == true)
+			const int& wantedPerson = *it;
+			
+			if (dogMatchedToPerson(wantedPerson, matched))
 			{
+				matched[wantedPerson] = currentDawg;
+				break;
+			}
+
+			const int& wantedDog = matched[wantedPerson];
+
+			if (personPrefersNewDog(personPref, wantedPerson, currentDawg, wantedDog))
+			{
+				freeDogs.push(wantedDog);
+				matched[wantedPerson] = currentDawg;
 				break;
 			}
 		}
 
-		for (int i = 0; i < size; i++)//for every dog
-		{
-
-			// find the next person they haven't proposed to.
-			if(dogFree[currentDog] == true)
-			{
-				int matchedPerson = dogPref[currentDog][i];
-				// if the person is free..
-				if (personMatch[matchedPerson] == -1)// person is not matched, match dog and person
-				{
-					// Dog proposes to person -- increment proposal.
-					personMatch[matchedPerson] = currentDog;
-					//dogFree[currentDog] = false;
-					freeDogAmount--;
-				}
-				else {// Either form new match, or compare with current match.
-					// person is already matched to dog2.
-					int currentMatch = personMatch[matchedPerson];
-
-					if (personPrefersNewDog(personPref, matchedPerson, currentDog, currentMatch) == false)
-					{
-						// person prefers new dog, dog2 is unmatched, dog1 and person make new match.
-						personMatch[matchedPerson] = currentDog;
-						dogFree[currentDog] = false;
-						dogFree[currentMatch] = true;
-					}
-				}
-			}
-		}
+		freeDogs.pop();
 	}
-
-	std::map<int, int> matches;
-
-	for (int i = 0; i < size; i++)
-	{
-		matches[i] = personMatch[i];
-	}
-				
-	return matches;
+	return matched;
 }
 
 int main()
